@@ -1,0 +1,175 @@
+body {
+    background-color: #f8f9fa;
+    display: flex;
+}
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: white;
+    padding: 2rem 1rem;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+}
+.sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+    border-radius: 5px;
+}
+.sidebar a:hover {
+    background-color: #e9ecef;
+}
+.container-wrapper {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 5vh 0;
+    margin-left: 250px;
+}
+.profile-container {
+    width: 100%;
+    max-width: 600px;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.profile-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid black;
+    object-fit: cover;
+}
+
+.back-arrow {
+    font-size: 2rem; 
+    margin-bottom: 1.2rem;
+    cursor: pointer;
+    color: #495057;
+    transition: color 0.2s; 
+    display: block; 
+}
+
+.back-arrow:hover {
+    color: #212529;
+}
+
+.profile-image-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid #dee2e6;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #6c757d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.edit-btn {
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease; 
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 5px; 
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Efecto al pasar el cursor sobre los botones */
+.edit-btn:hover {
+    background-color: #e9ecef;
+    transform: translateY(-1px); 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: #495057;
+}
+
+/* Efecto al hacer clic en los botones */
+.edit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Estilo para las etiquetas de información */
+.info-label {
+    margin-bottom: 0;
+    color: #495057;
+}
+
+/* Estilo para los valores de información */
+.info-value {
+    margin-bottom: 0;
+    font-weight: 500;
+    color: #212529;
+}
+
+/* Estilos para el botón de guardar */
+.save-btn {
+    background-color: #0D6EFD;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 24px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1.5rem;
+}
+
+/* Efecto al pasar el cursor sobre el botón guardar */
+.save-btn:hover {
+    background-color: #115cce;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Efecto al hacer clic en el botón guardar */
+.save-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor para el botón de guardar, centrado */
+.save-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
