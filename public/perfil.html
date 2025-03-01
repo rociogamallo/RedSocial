@@ -77,23 +77,47 @@
         .books-container {
             margin-top: 2rem;
         }
-        .add-books {
-            margin-top: 1rem;
-            text-align: center;
-        }
-        .collapse-content {
-            display: none;  
-            padding: 10px;
-            border-top: 1px solid #ddd;
+        .book-card {
             display: flex;
-            align-items: center;
-            gap: 1rem;
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background: #fff;
         }
-        .book-image {
-            width: 200px;
-            height: 200px;
+        .book-card .book-info {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+        }
+        .book-card .book-info img {
+            width: 120px;
+            height: 180px;
             border-radius: 5px;
             object-fit: cover;
+        }
+        .book-info-text {
+            flex-grow: 1;
+        }
+        .book-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .book-info-header h5 {
+            margin: 0;
+        }
+        .book-actions {
+            width: 100%;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .book-actions button {
+            width: 100%;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -107,31 +131,27 @@
     </nav>
     <div class="container-wrapper">
         <div class="profile-container">
-            <img id="foto" class="profile-img" src="" alt="Foto de perfil">
-            <h2 id="nombre"></h2>
-            <p id="descripcion" class="text-muted"></p>
-            <p><strong>Localidad:</strong> <span id="localidad"></span></p>
-            <div class="books-container">
-                <h4>Libros para Intercambio</h4>
-                <ul class="list-group">
-                    <li class="list-group-item" onclick="toggleCollapse(this)" name="libro">El Quijote - Miguel de Cervantes
-                        <div class="collapse-content">
-                            <img src="Quijote.jpeg" class="book-image">
-                            <div>
-                                <p name="sinopsis"><strong>Sinopsis:</strong> Un clásico de la literatura española.</p>
-                                <p name="genero"><strong>Género:</strong> Novela</p>
-                                <p name="estado"><strong>Estado:</strong> Bueno</p>
-                                <p name="opinion"><strong>Opinión:</strong> Las aventuras de un caballero enloquecido por las novelas de caballería.</p>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-                <div class="add-books">
-                    <a href="agregar_libros.html" class="btn btn-primary">Añadir más libros</a>
+            <div>
+                <img src="./img/engranaje.png" alt="Ajustes" class="settings-icon" onclick="window.location.href='ajustes.html'">
+                <div class="profile-header">
+                    <img id="profileImage" src="/default.png" alt="Imagen de perfil" class="profile-image">
+                    <div>
+                        <h3 id="nombre"></h3>
+                        <p id="descripcion" class="text-muted"></p>
+                        <p><strong>Localidad:</strong> <span id="localidad"></span></p>
+                    </div>
+                </div>
+                <div class="books-container">
+                    <h4>Libros para Intercambio</h4>
+                    <div id="booksList"></div>
+                    <div class="text-center mt-3">
+                        <a href="agregar_libros.html" class="btn btn-primary">Añadir más libros</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
@@ -145,44 +165,182 @@
             try {
                 const response = await fetch('http://localhost:3000/perfil', {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': token
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Asignar datos del perfil a los elementos HTML
-                    document.getElementById('foto').src = data.foto;
-                    document.getElementById('nombre').textContent = `${data.nombre} ${data.apellidos}`;
+                    document.getElementById('profileImage').src = data.foto || '/default.png';
+                    const nombreUsuario = data.mote && data.mote.trim() !== "" ? data.mote : `${data.nombre} ${data.apellidos}`;
+                    document.getElementById('nombre').textContent = nombreUsuario;
                     document.getElementById('descripcion').textContent = data.descripcion;
                     document.getElementById('localidad').textContent = data.localidad;
+
+                    const booksList = document.getElementById('booksList');
+                    booksList.innerHTML = "";  
+
+                    data.libros.forEach(libro => {
+                        const isOwner = libro.ownerId === data.uid;
+
+                        const bookCard = document.createElement('div');
+                        bookCard.classList.add('book-card');
+
+                        const bookDetails = document.createElement('div');
+                        bookDetails.classList.add('book-info-header');
+                        bookDetails.innerHTML = `
+                            <h5>${libro.titulo} - ${libro.autor}</h5>
+                            <i class="fas fa-caret-down"></i>
+                        `;
+                        bookDetails.addEventListener('click', () => {
+                            const details = bookCard.querySelector('.book-info');
+                            details.classList.toggle('d-none');
+                        });
+
+                        const bookInfo = document.createElement('div');
+                        bookInfo.classList.add('book-info', 'd-none');
+                        bookInfo.innerHTML = `
+                            <img src="${libro.imagen}" alt="Imagen del libro">
+                            <div class="book-info-text">
+                                <p><strong>Género:</strong> ${libro.genero}</p>
+                                <p><strong>Estado:</strong> ${libro.estado}</p>
+                                <p><strong>Opinión:</strong> ${libro.resumen}</p>
+                            </div>
+                        `;
+
+                        const bookActions = document.createElement('div');
+                        bookActions.classList.add('book-actions');
+                        bookActions.innerHTML = `
+                            ${isOwner ? 
+                                `<button class="btn btn-danger" onclick="borrarLibro('${libro.titulo}', '${token}')">Borrar</button>` :
+                                `<button class="btn btn-success" onclick="interesado('${libro.titulo}', '${token}')">Lo quiero</button>`}
+                        `;
+
+                        bookCard.appendChild(bookDetails);
+                        bookCard.appendChild(bookInfo);
+                        bookCard.appendChild(bookActions);
+
+                        booksList.appendChild(bookCard);
+                    });
+
                 } else {
                     alert('Error al cargar el perfil: ' + data.message);
                 }
             } catch (error) {
                 console.error('Error al obtener el perfil:', error);
-                alert('Error al conectar con el servidor.');
             }
         });
-    </script>
-    <script>
-        // Función para mostrar u ocultar el contenido
-        function toggleCollapse(element) {
-            let content = element.querySelector(".collapse-content");
-            content.style.display = content.style.display === "flex" ? "none" : "flex";
+
+        function interesado(libroId, token) {
+            fetch(`http://localhost:3000/interesado/${libroId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('Te has interesado por este libro!');
+                window.location.href = `chats.html?email=${data.email}`;
+            });
         }
 
-        // Al cargar la página, ocultamos todas las secciones de libros
-        window.addEventListener('load', () => {
-            let collapseContents = document.querySelectorAll('.collapse-content');
-            collapseContents.forEach(content => {
-                content.style.display = 'none'; 
-            });
-        });
+        function borrarLibro(tituloLibro, token) {
+            // Asegúrate de que se recibe un token
+            if (!token) {
+                console.error('No tienes sesión iniciada');
+                return;
+            }
+
+            // Crear el cuerpo de la solicitud
+            const body = {
+                tituloLibro: tituloLibro,
+                email: localStorage.getItem('email')  // Obtén el email desde el localStorage si lo tienes guardado allí
+            };
+
+            fetch(`http://localhost:3000/borrarLibro/${encodeURIComponent(tituloLibro)}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+                })
+                .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al borrar el libro');
+                }
+                return response.json();
+                })
+                .then(data => {
+                console.log(data.message);  // Mostrar el mensaje de éxito
+                alert('Libro eliminado');
+                // Actualizar la lista de libros
+                actualizarListaLibros(token);
+                })
+                .catch(error => {
+                console.error('Error al eliminar el libro:', error);
+                });
+        }
+
+        function actualizarListaLibros(token) {
+  fetch('http://localhost:3000/perfil', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    // Actualizar la lista de libros en el DOM
+    const booksList = document.getElementById('booksList');
+    booksList.innerHTML = "";  // Limpiar la lista actual
+
+    data.libros.forEach(libro => {
+      const isOwner = libro.ownerId === data.uid;
+
+      const bookCard = document.createElement('div');
+      bookCard.classList.add('book-card');
+
+      const bookDetails = document.createElement('div');
+      bookDetails.classList.add('book-info-header');
+      bookDetails.innerHTML = `
+        <h5>${libro.titulo} - ${libro.autor}</h5>
+        <i class="fas fa-caret-down"></i>
+      `;
+      bookDetails.addEventListener('click', () => {
+        const details = bookCard.querySelector('.book-info');
+        details.classList.toggle('d-none');
+      });
+
+      const bookInfo = document.createElement('div');
+      bookInfo.classList.add('book-info', 'd-none');
+      bookInfo.innerHTML = `
+        <img src="${libro.imagen}" alt="Imagen del libro">
+        <div class="book-info-text">
+          <p><strong>Género:</strong> ${libro.genero}</p>
+          <p><strong>Estado:</strong> ${libro.estado}</p>
+          <p><strong>Opinión:</strong> ${libro.resumen}</p>
+        </div>
+      `;
+
+      const bookActions = document.createElement('div');
+      bookActions.classList.add('book-actions');
+      bookActions.innerHTML = `
+        ${isOwner ? 
+            `<button class="btn btn-danger" onclick="borrarLibro('${libro.titulo}', '${token}')">Borrar</button>` :
+            `<button class="btn btn-success" onclick="interesado('${libro.titulo}', '${token}')">Lo quiero</button>`}
+      `;
+
+      bookCard.appendChild(bookDetails);
+      bookCard.appendChild(bookInfo);
+      bookCard.appendChild(bookActions);
+
+      booksList.appendChild(bookCard);
+    });
+
+  })
+  .catch(error => console.error('Error al actualizar la lista de libros:', error));
+}
+
+
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
