@@ -9,11 +9,11 @@
 </head>
 <body>
     <nav class="sidebar">
-        <a href="prueba index.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="index.html"><i class="fas fa-home"></i> Inicio</a>
         <a href="buscador.html"><i class="fas fa-search"></i> Buscar</a>
         <a href="chats.html"><i class="fas fa-envelope"></i> Mensajes</a>
         <a href="perfil.html"><i class="fas fa-user"></i> Perfil</a>
-
+        <a href="logout.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
     </nav>
     
     <div class="container-wrapper">
@@ -21,200 +21,142 @@
             <h1>¡Bienvenido a Bookser!</h1>
             <p>Descubre, comparte e intercambia libros con personas de tu comunidad. Una segunda vida para tus libros favoritos y nuevas historias por descubrir.</p>
             <div class="search-bar">
-                <input type="text" placeholder="Busca por título, autor o género...">
-                <button><i class="fas fa-search"></i></button>
+                <input type="text" id="searchInput" placeholder="Busca por título, autor o género...">
+                <button id="searchBtn"><i class="fas fa-search"></i></button>
             </div>
         </div>
         
         <div class="categories">
             <div class="category-tag active">Todos</div>
-            <div class="category-tag">Novela</div>
-            <div class="category-tag">Ciencia Ficción</div>
+            <div class="category-tag">Ficción</div>
+            <div class="category-tag">No ficción</div>
+            <div class="category-tag">Misterio</div>
+            <div class="category-tag">Ciencia ficción</div>
             <div class="category-tag">Fantasía</div>
-            <div class="category-tag">Historia</div>
+            <div class="category-tag">Romance</div>
+            <div class="category-tag">Thriller</div>
             <div class="category-tag">Biografía</div>
-            <div class="category-tag">Negocios</div>
+            <div class="category-tag">Historia</div>
+            <div class="category-tag">Autoayuda</div>
             <div class="category-tag">Poesía</div>
-            <div class="category-tag">Arte</div>
-        </div>
+            <div class="category-tag">Otro</div>
+        </div>        
         
-        <h2 class="section-title"><i class="fas fa-fire"></i> Libros populares</h2>
-        <div class="books-grid">
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO1</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO2</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO3</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO4</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-        </div>
-        
-        <h2 class="section-title"><i class="fas fa-clock"></i> Añadidos recientemente</h2>
-        <div class="books-grid">
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO5</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO6</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO7</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO8</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-        </div>
-        
-        <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> Cerca de ti</h2>
-        <div class="books-grid">
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO9</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO10</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO11</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-            
-            <div class="book-card">
-                <div class="book-cover" style="background-image: url('/api/placeholder/220/250')"></div>
-                <div class="book-info">
-                    <div class="book-title">LIBRO12</div>
-                    <div class="book-author">AUTOR</div>
-                    <div class="book-owner">
-                        <div class="owner-avatar"></div>
-                        <span>DUEÑO.</span>
-                    </div>
-                    <a href="#" class="request-btn">Solicitar intercambio</a>
-                </div>
-            </div>
-        </div>
-        
-        <a href="#" class="add-book-btn">
-            <i class="fas fa-plus fa-lg"></i>
-        </a>
+        <h2 class="section-title"><i class="fas fa-fire"></i> Añadidos recientemente</h2>
+        <div class="books-grid" id="booksGrid"></div>
+
     </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const requestButtons = document.querySelectorAll(".request-btn");
+            let booksData = [];
     
-            requestButtons.forEach(button => {
-                button.addEventListener("click", function (event) {
-                    event.preventDefault();
-                    window.location.href = "messages.html"; // Redirige al chat
+            // 📚 Cargar libros al iniciar
+            loadBooks();
+    
+            async function loadBooks() {
+                try {
+                    const response = await fetch("http://localhost:3000/libros");
+                    booksData = await response.json();
+                    displayBooks(booksData);
+                } catch (error) {
+                    console.error("Error cargando libros:", error);
+                }
+            }
+    
+            function displayBooks(books) {
+                const booksGrid = document.querySelector(".books-grid");
+                booksGrid.innerHTML = ""; // Limpiar antes de agregar nuevos libros
+    
+                const userEmail = localStorage.getItem("userEmail"); // Obtener el email del usuario logueado desde el token
+    
+                books.forEach(book => {
+                    // Verificar si el libro tiene título, y si el email del propietario no coincide con el usuario logueado
+                    if (!book.titulo || book.email === userEmail) {
+                        return; // No mostrar el libro si no tiene título o es del usuario logueado
+                    }
+    
+                    const bookCard = document.createElement("div");
+                    bookCard.classList.add("book-card");
+    
+                    const propietarioNombre = book.propietarioMote || book.propietario;  // Usar el mote si existe, si no, el nombre completo
+                    const propietarioFoto = book.propietarioFoto || '/img/libro.png';  // Usar foto de propietario si existe
+    
+                    bookCard.innerHTML = `
+                        <div class="book-cover" style="background-image: url('${book.portada || '/img/default.png'}')"></div>
+                        <div class="book-info">
+                            <div class="book-title">${book.titulo}</div>
+                            <div class="book-author">${book.autor}</div>
+                            <a href="#" class="request-btn" data-owner-email="${book.email}">Solicitar intercambio</a>
+                        </div>
+                    `;
+    
+                    booksGrid.appendChild(bookCard);
+                });
+            }
+    
+            // 🔍 Buscar libros en tiempo real
+            document.querySelector(".search-bar input").addEventListener("input", async function () {
+                const searchTerm = this.value.toLowerCase();
+                
+                if (searchTerm === "") {
+                    displayBooks(booksData); // Si está vacío, mostrar todos
+                    return;
+                }
+    
+                try {
+                    const response = await fetch(`http://localhost:3000/buscar?q=${searchTerm}`);
+                    const filteredBooks = await response.json();
+                    displayBooks(filteredBooks);
+                } catch (error) {
+                    console.error("Error en la búsqueda:", error);
+                }
+            });
+    
+            // 🎯 Filtrar por categorías
+            document.querySelectorAll(".category-tag").forEach(category => {
+                category.addEventListener("click", function () {
+                    document.querySelectorAll(".category-tag").forEach(tag => tag.classList.remove("active"));
+                    this.classList.add("active");
+    
+                    const selectedCategory = this.innerText;
+                    if (selectedCategory === "Todos") {
+                        displayBooks(booksData);
+                    } else {
+                        const filteredBooks = booksData.filter(book => book.genero === selectedCategory);
+                        displayBooks(filteredBooks);
+                    }
+                });
+            });
+            document.querySelector(".search-bar input").addEventListener("input", async function () {
+                const searchTerm = this.value.toLowerCase();
+                
+                if (searchTerm === "") {
+                    displayBooks(booksData); // Si está vacío, mostrar todos
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`http://localhost:3000/buscar?q=${searchTerm}`);
+                    const filteredBooks = await response.json();
+                    displayBooks(filteredBooks);
+                } catch (error) {
+                    console.error("Error en la búsqueda:", error);
+                }
+            });
+
+    
+            // Script para manejar el clic en el botón de solicitud de intercambio
+            document.addEventListener("DOMContentLoaded", function () {
+                const requestButtons = document.querySelectorAll(".request-btn");
+    
+                requestButtons.forEach(button => {
+                    button.addEventListener("click", function (event) {
+                        event.preventDefault();
+                        const ownerEmail = button.getAttribute("data-owner-email"); // Obtener el email del propietario
+                        localStorage.setItem("bookOwnerEmail", ownerEmail); // Guardar el email del propietario
+                        window.location.href = "messages.html"; // Redirige al chat
+                    });
                 });
             });
         });
@@ -222,4 +164,3 @@
     
 </body>
 </html>
-  
