@@ -285,6 +285,19 @@ app.get('/buscar', async (req, res) => {
   }
 });
 
+app.get("/bibliotecas", async (req, res) => {
+  try {
+      const response = await fetch("https://datos.madrid.es/egob/catalogo/201747-0-bibliobuses-bibliotecas.xml");
+      const data = await response.text();
+      res.set("Content-Type", "application/xml");
+      res.send(data);
+  } catch (error) {
+      res.status(500).send("Error al obtener los datos");
+  }
+});
+
+app.listen(3001, () => console.log("Servidor proxy en http://localhost:3001"));
+
 
 // Ruta para servir el archivo HTML principal
 app.get('/', (req, res) => {
@@ -296,3 +309,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+
