@@ -247,6 +247,44 @@ app.put('/actualizarPerfil', async (req, res) => {
   }
 });
 
+// Ruta para obtener los libros
+app.get("/libros", async (req, res) => {
+  try {
+      const librosSnapshot = await db.collection("libros").get();
+      const libros = librosSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+      }));
+
+      res.json(libros);
+  } catch (error) {
+      res.status(500).json({ error: "Error obteniendo libros" });
+  }
+});
+
+// Endpoint para buscar libros
+app.get('/buscar', async (req, res) => {
+  const searchTerm = req.query.q?.toLowerCase() || '';
+  try {
+    const librosSnapshot = await db.collection('libros').get();
+    const libros = librosSnapshot.docs.map(doc => doc.data());
+
+    // Filtrar los libros por título, autor o género
+    const filteredBooks = libros.filter(book => {
+      return (
+        book.titulo.toLowerCase().includes(searchTerm) ||
+        book.autor.toLowerCase().includes(searchTerm) ||
+        book.genero.toLowerCase().includes(searchTerm)
+      );
+    });
+
+    res.json(filteredBooks);
+  } catch (error) {
+    console.error("Error en la búsqueda de libros:", error);
+    res.status(500).json({ error: "Error al realizar la búsqueda" });
+  }
+});
+
 
 // Ruta para servir el archivo HTML principal
 app.get('/', (req, res) => {
@@ -258,4 +296,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
