@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Intercambio de Libros</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/messages.css">
+</head>
+<body>
+    <nav class="sidebar main-sidebar">
+        <a href="index.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="buscador.html"><i class="fas fa-search"></i> Buscar</a>
+        <a href="chats.html"><i class="fas fa-envelope"></i> Mensajes</a>
+        <a href="perfil.html"><i class="fas fa-user"></i> Perfil</a>
+        <a href="logout.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+    </nav>
+    
+    <nav class="sidebar chat-list">
+        <h3>Tus Chats</h3>
+        <ul>
+            <li><a href="#">Chat con Juan</a></li>
+            <li><a href="#">Chat con María</a></li>
+            <li><a href="#">Chat con Pedro</a></li>
+        </ul>
+    </nav>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Chat de Intercambio</h2>
+        </div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Escribe un mensaje...">
+            <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const chatBox = document.getElementById("chat-box");
+            const messageInput = document.getElementById("message-input");
+            const sendButton = document.getElementById("send-button");
+
+            sendButton.addEventListener("click", function () {
+                const messageText = messageInput.value.trim();
+                if (messageText !== "") {
+                    const messageElement = document.createElement("div");
+                    messageElement.classList.add("chat-message", "sent");
+                    messageElement.textContent = messageText;
+                    chatBox.appendChild(messageElement);
+                    messageInput.value = "";
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            });
+
+            messageInput.addEventListener("keypress", function (event) {
+                if (event.key === "Enter") {
+                    sendButton.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
