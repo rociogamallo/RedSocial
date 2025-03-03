@@ -145,9 +145,10 @@ async function loadUserChats() {
                         
                         if (!userSnapshot.empty) {
                             const userData = userSnapshot.docs[0].data();
-                            otherUserName = userData.nombre && userData.apellidos 
+                            otherUserName = userData.mote 
+                            ? userData.mote : (userData.nombre && userData.apellidos 
                                 ? `${userData.nombre} ${userData.apellidos}` 
-                                : otherUserEmail;
+                                : otherUserEmail);
                             otherUserPhoto = userData.foto || 'img/default.png';
                             otherUserOnline = userData.online || false;
                         }
@@ -364,9 +365,11 @@ async function openChat(currentChatId, otherEmail) {
         document.getElementById('chat-user-avatar').src = userData.foto || 'img/default.png';
         
         // Mostrar nombre completo o email
-        const displayName = userData.nombre && userData.apellidos 
-            ? `${userData.nombre} ${userData.apellidos}`
-            : otherEmail;
+        const displayName = userData.mote 
+        ? userData.mote 
+        : (userData.nombre && userData.apellidos 
+            ? `${userData.nombre} ${userData.apellidos}` 
+            : otherUserEmail);
         document.getElementById('chat-user-name').textContent = displayName;
         
         // Mostrar estado online/offline
@@ -576,8 +579,11 @@ function setupRealtimeMessages() {
                                 .then(snapshot => {
                                     if (!snapshot.empty) {
                                         const userData = snapshot.docs[0].data();
-                                        const userName = userData.nombre && userData.apellidos ? 
-                                            `${userData.nombre} ${userData.apellidos}` : messageData.sender;
+                                        const userName = userData.mote 
+                                        ? userData.mote 
+                                        : userData.nombre && userData.apellidos 
+                                            ? `${userData.nombre} ${userData.apellidos}` 
+                                            : messageData.sender;
                                         const userPhoto = userData.foto || 'img/default.png';
                                         
                                         // Mostrar notificación
@@ -1374,8 +1380,11 @@ function setupGlobalNotificationsListener() {
                         .then(snapshot => {
                             if (!snapshot.empty) {
                                 const userData = snapshot.docs[0].data();
-                                const userName = userData.nombre && userData.apellidos ? 
-                                    `${userData.nombre} ${userData.apellidos}` : otherUserEmail;
+                                const userName = userData.mote 
+                                ? userData.mote 
+                                : (userData.nombre && userData.apellidos 
+                                    ? `${userData.nombre} ${userData.apellidos}` 
+                                    : otherUserEmail);
                                 const userPhoto = userData.foto || 'img/default.png';
                                 
                                 // Mostrar notificación
