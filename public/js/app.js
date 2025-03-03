@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
             bookCard.classList.add("book-card");
 
             bookCard.innerHTML = `
-                <div class="book-cover" style="background-image: url('${book.portada || '/img/default.png'}')"></div>
+                <div class="book-cover" style="background-image: url('${book.portada || '/img/libro.png'}')"></div>
                 <div class="book-info">
                     <div class="book-title">${book.titulo}</div>
                     <div class="book-author">${book.autor}</div>
