@@ -884,3 +884,98 @@ body {
 .chat-box::-webkit-scrollbar-thumb:hover {
     background: #a1a1a1;
 }
+
+/* Estilos para el indicador de notificaciones */
+.notification-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #fff;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.notification-indicator:hover {
+    transform: scale(1.1);
+}
+
+.notification-indicator i {
+    font-size: 24px;
+    color: #4a76a8;
+}
+
+.notification-indicator.disabled i {
+    color: #ccc;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #ff3b30;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+}
+
+.notification-tooltip {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    width: 250px;
+    display: none;
+}
+
+.notification-indicator:hover .notification-tooltip {
+    display: block;
+}
+
+.notification-tooltip h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.notification-tooltip p {
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 14px;
+}
+
+.notification-tooltip button {
+    background-color: #4a76a8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+}
+
+.notification-tooltip button:hover {
+    background-color: #3a5b8c;
+}
+
+.notification-tooltip button.disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
