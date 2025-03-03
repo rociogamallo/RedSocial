@@ -8,14 +8,13 @@
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="css/ajustes.css">
-    
 </head>
-    <script src="js/logout.js"></script>
+<script src="js/logout.js"></script>
 <body>
     <nav class="sidebar">
         <a href="index.html"><i class="fas fa-home"></i> Inicio</a>
         <a href="buscador.html"><i class="fas fa-search"></i> Buscar</a>
-        <a href="chatsList.html"><i class="fas fa-envelope"></i> Mensajes</a>
+        <a href="chats.html"><i class="fas fa-envelope"></i> Mensajes</a>
         <a href="perfil.html"><i class="fas fa-user"></i> Perfil</a>
         <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
     </nav>
@@ -42,41 +41,6 @@
         </div>
     </div>
 
-    <script>
-        function editarCampo(id) {
-            let campo = document.getElementById(id);
-            campo.removeAttribute('readonly');
-            campo.focus();
-        }
-
-        async function guardarCambios() {
-            let mote = document.getElementById('mote').value;
-            let descripcion = document.getElementById('descripcion').value;
-
-            // Desactivar la edición
-            document.getElementById('mote').setAttribute('readonly', true);
-            document.getElementById('descripcion').setAttribute('readonly', true);
-
-            // Enviar los cambios al servidor
-            const token = localStorage.getItem('token'); // Obtener el token del localStorage
-            const response = await fetch('/actualizarPerfil', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ mote, descripcion })
-            });
-
-            const data = await response.json();
-
-            if (data.message === 'Perfil actualizado correctamente') {
-                alert('Cambios guardados correctamente');
-            } else {
-                alert('Hubo un error al guardar los cambios');
-            }
-        }
-    </script>
-    <script src="js/users.js"></script>
+    <script src="js/ajustes.js"></script>
 </body>
 </html>
