@@ -5,61 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - Intercambio de Libros</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="css/messages.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
     <nav class="sidebar main-sidebar">
         <a href="index.html"><i class="fas fa-home"></i> Inicio</a>
         <a href="buscador.html"><i class="fas fa-search"></i> Buscar</a>
-        <a href="chats.html"><i class="fas fa-envelope"></i> Mensajes</a>
+        <a href="chats_list.html" class="active"><i class="fas fa-envelope"></i> Mensajes</a>
         <a href="perfil.html"><i class="fas fa-user"></i> Perfil</a>
         <a href="logout.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
     </nav>
     
-    <nav class="sidebar chat-list">
+    <nav class="sidebar chat-list" id="chat-list-sidebar">
         <h3>Tus Chats</h3>
-        <ul>
-            <li><a href="#">Chat con Juan</a></li>
-            <li><a href="#">Chat con María</a></li>
-            <li><a href="#">Chat con Pedro</a></li>
+        <div id="chats-loading" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Cargando chats...</p>
+        </div>
+        <ul id="chats-list">
+            <!-- Los chats se cargarán dinámicamente aquí -->
         </ul>
     </nav>
     
     <div class="chat-container">
         <div class="chat-header">
-            <h2>Chat de Intercambio</h2>
+            <div id="chat-user-info">
+                <div class="user-avatar">
+                    <img src="img/default.png" alt="Usuario" id="chat-user-avatar">
+                    <span class="online-indicator" id="online-indicator" style="display: none;"></span>
+                </div>
+                <div class="user-details">
+                    <h2 id="chat-user-name">Chat de Intercambio</h2>
+                    <p id="chat-user-status">Selecciona un chat para comenzar</p>
+                </div>
+            </div>
         </div>
-        <div class="chat-box" id="chat-box"></div>
+        
+        <div class="chat-box" id="chat-box">
+            <div id="messages-loading" class="loading-indicator">
+                <div class="spinner"></div>
+                <p>Cargando mensajes...</p>
+            </div>
+            <div id="no-chat-selected" class="empty-state">
+                <i class="fas fa-comments"></i>
+                <p>Selecciona un chat para ver los mensajes</p>
+            </div>
+            <div id="no-messages" class="empty-state" style="display: none;">
+                <i class="fas fa-comment-slash"></i>
+                <p>No hay mensajes</p>
+                <p class="sub-text">Envía el primer mensaje para iniciar la conversación</p>
+            </div>
+        </div>
+        
         <div class="chat-input">
-            <input type="text" id="message-input" placeholder="Escribe un mensaje...">
-            <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="message-input" placeholder="Escribe un mensaje..." disabled>
+            <button id="send-button" disabled><i class="fas fa-paper-plane"></i></button>
         </div>
+        <!-- Añade esto dentro de la barra lateral de chat-list-sidebar -->
+        <div id="no-chats-message" class="empty-state" style="display: none;">
+            <i class="fas fa-comments"></i>
+            <p>No tienes conversaciones</p>
+            <p class="sub-text">Cuando inicies un chat, aparecerá aquí</p>
+        </div>
+
     </div>
     
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const chatBox = document.getElementById("chat-box");
-            const messageInput = document.getElementById("message-input");
-            const sendButton = document.getElementById("send-button");
-
-            sendButton.addEventListener("click", function () {
-                const messageText = messageInput.value.trim();
-                if (messageText !== "") {
-                    const messageElement = document.createElement("div");
-                    messageElement.classList.add("chat-message", "sent");
-                    messageElement.textContent = messageText;
-                    chatBox.appendChild(messageElement);
-                    messageInput.value = "";
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            });
-
-            messageInput.addEventListener("keypress", function (event) {
-                if (event.key === "Enter") {
-                    sendButton.click();
-                }
-            });
-        });
-    </script>
+    <script src="js/messages.js"></script>
 </body>
 </html>
