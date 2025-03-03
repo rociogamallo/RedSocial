@@ -6,6 +6,19 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');  // Requiere multer para subir archivos
 const app = express();
+const webpush = require('web-push');
+
+// Configurar Web Push
+const vapidKeys = {
+  publicKey: 'BK3dQwXI_qONBKYUHkooFbPXmQeewtjN0QhK1kBpVFBuM0wid5uD34Ttspm1Fo3RjO1GJTKHEV_LNFjGAbuHIRk',
+  privateKey: 'AdzbzW2r8xEYuN5OQxRfpx6-mnCsD8LjIG5Ry2SuwUY'
+};
+
+webpush.setVapidDetails(
+  'mailto:tu@email.com',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
 
 // Inicializar Firebase Admin SDK
 admin.initializeApp({
@@ -311,3 +324,272 @@ app.listen(PORT, () => {
 });
 
 
+// Middleware para verificar el token de autenticación
+const authenticateToken = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Se requiere autenticación' });
+  }
+  
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('Error al verificar el token:', error);
+    return res.status(403).json({ error: 'Token inválido o expirado' });
+  }
+};
+
+// Endpoint para obtener los chats del usuario
+app.get('/api/chats', authenticateToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    
+    // Obtener todos los chats donde el usuario es participante
+    const chatsSnapshot = await admin.firestore().collection('chats')
+      .where('participantes', 'array-contains', userEmail)
+      .orderBy('lastMessageTime', 'desc')
+      .get();
+    
+    const chats = [];
+    
+    for (const doc of chatsSnapshot.docs) {
+      const chatData = doc.data();
+      
+      // Obtener el otro participante
+      const otherUserEmail = chatData.participantes.find(email => email !== userEmail);
+      
+      // Obtener información del otro usuario
+      const usersSnapshot = await admin.firestore().collection('users')
+        .where('email', '==', otherUserEmail)
+        .get();
+      
+      if (!usersSnapshot.empty) {
+        const userData = usersSnapshot.docs[0].data();
+        
+        // Formatear la hora del último mensaje
+        let formattedTime = '';
+        if (chatData.lastMessageTime) {
+          const lastMessageDate = chatData.lastMessageTime.toDate();
+          formattedTime = formatMessageTime(lastMessageDate);
+        }
+        
+        // Obtener el recuento de mensajes no leídos
+        const unreadCount = chatData.unreadCount && chatData.unreadCount[userEmail] 
+          ? chatData.unreadCount[userEmail] 
+          : 0;
+        
+        // Obtener nombre para mostrar
+        const displayName = userData.nombre && userData.apellidos 
+          ? `${userData.nombre} ${userData.apellidos}` 
+          : otherUserEmail;
+        
+        chats.push({
+          id: doc.id,
+          lastMessage: chatData.lastMessage || '',
+          lastMessageTime: formattedTime,
+          unreadCount: unreadCount,
+          otherUserEmail: otherUserEmail,
+          otherUserName: displayName,
+          otherUserPhoto: userData.foto || '',
+          otherUserOnline: userData.online || false
+        });
+      }
+    }
+    
+    res.json(chats);
+    
+  } catch (error) {
+    console.error('Error al obtener los chats:', error);
+    res.status(500).json({ error: 'Error al obtener los chats' });
+  }
+});
+
+// Endpoint para obtener sugerencias de usuarios
+app.get('/api/users/suggested', authenticateToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    
+    // Obtener todos los usuarios excepto el actual
+    const usersSnapshot = await admin.firestore().collection('users')
+      .limit(20)
+      .get();
+    
+    // Obtener los chats existentes para filtrar usuarios
+    const chatsSnapshot = await admin.firestore().collection('chats')
+      .where('participantes', 'array-contains', userEmail)
+      .get();
+    
+    const existingChatEmails = new Set();
+    chatsSnapshot.forEach(doc => {
+      const participantes = doc.data().participantes;
+      participantes.forEach(email => {
+        if (email !== userEmail) {
+          existingChatEmails.add(email);
+        }
+      });
+    });
+    
+    // Filtrar usuarios
+    const suggestedUsers = [];
+    usersSnapshot.forEach(doc => {
+      const userData = doc.data();
+      if (userData.email !== userEmail && !existingChatEmails.has(userData.email)) {
+        suggestedUsers.push({
+          id: doc.id,
+          email: userData.email,
+          nombre: userData.nombre || '',
+          apellidos: userData.apellidos || '',
+          foto: userData.foto || '',
+          localidad: userData.localidad || '',
+          online: userData.online || false
+        });
+      }
+    });
+    
+    res.json(suggestedUsers);
+    
+  } catch (error) {
+    console.error('Error al obtener sugerencias de usuarios:', error);
+    res.status(500).json({ error: 'Error al obtener sugerencias de usuarios' });
+  }
+});
+
+// Endpoint para crear un nuevo chat
+app.post('/api/chats/create', authenticateToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { otherUserEmail } = req.body;
+    
+    if (!otherUserEmail) {
+      return res.status(400).json({ error: 'Se requiere el email del otro usuario' });
+    }
+    
+    // Comprobar si ya existe un chat entre estos usuarios
+    const existingChatsQuery = await admin.firestore().collection('chats')
+      .where('participantes', 'array-contains', userEmail)
+      .get();
+    
+    let existingChatId = null;
+    
+    existingChatsQuery.forEach(doc => {
+      const chatData = doc.data();
+      if (chatData.participantes.includes(otherUserEmail)) {
+        existingChatId = doc.id;
+      }
+    });
+    
+    // Si ya existe un chat, devolver su ID
+    if (existingChatId) {
+      return res.json({ chatId: existingChatId });
+    }
+    
+    // Si no existe, crear nuevo chat
+    const newChat = {
+      participantes: [userEmail, otherUserEmail],
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastMessageTime: admin.firestore.FieldValue.serverTimestamp(),
+      lastMessage: "",
+      unreadCount: {
+        [userEmail]: 0,
+        [otherUserEmail]: 0
+      }
+    };
+    
+    const chatRef = await admin.firestore().collection('chats').add(newChat);
+    
+    res.status(201).json({ chatId: chatRef.id });
+    
+  } catch (error) {
+    console.error('Error al crear chat:', error);
+    res.status(500).json({ error: 'Error al crear chat' });
+  }
+});
+
+// Función auxiliar para formatear la hora del mensaje
+function formatMessageTime(timestamp) {
+  const now = new Date();
+  const messageDate = new Date(timestamp);
+  
+  // Si es hoy, mostrar solo la hora
+  if (messageDate.toDateString() === now.toDateString()) {
+    return messageDate.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }
+  
+  // Si es ayer
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (messageDate.toDateString() === yesterday.toDateString()) {
+    return 'Ayer';
+  }
+  
+  // Si es esta semana, mostrar el día
+  const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const daysDiff = (now - messageDate) / (1000 * 60 * 60 * 24);
+  if (daysDiff < 7) {
+    return daysOfWeek[messageDate.getDay()];
+  }
+  
+  // Si es otro día, mostrar fecha corta
+  return messageDate.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit'
+  });
+}
+
+// Endpoint para guardar suscripción de notificaciones push
+app.post('/api/subscribe', authenticateToken, async (req, res) => {
+  try {
+    const subscription = req.body;
+    const userEmail = req.user.email;
+    
+    // Guardar la suscripción en Firestore
+    await db.collection('users').where('email', '==', userEmail).get()
+      .then(snapshot => {
+        if (!snapshot.empty) {
+          snapshot.docs[0].ref.update({
+            pushSubscription: subscription
+          });
+        }
+      });
+    
+    res.status(201).json({ message: 'Suscripción guardada' });
+  } catch (error) {
+    console.error('Error al guardar suscripción:', error);
+    res.status(500).json({ error: 'Error al guardar suscripción' });
+  }
+});
+
+// Función para enviar notificación push
+async function sendPushNotification(userEmail, title, body, icon, url) {
+  try {
+    // Obtener la suscripción del usuario
+    const userSnapshot = await db.collection('users')
+      .where('email', '==', userEmail)
+      .get();
+    
+    if (userSnapshot.empty || !userSnapshot.docs[0].data().pushSubscription) {
+      return;
+    }
+    
+    const subscription = userSnapshot.docs[0].data().pushSubscription;
+    
+    // Enviar notificación
+    await webpush.sendNotification(subscription, JSON.stringify({
+      title,
+      body,
+      icon,
+      url
+    }));
+    
+  } catch (error) {
+    console.error('Error al enviar notificación push:', error);
+  }
+}
