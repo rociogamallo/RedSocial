@@ -30,10 +30,23 @@ document.addEventListener("DOMContentLoaded", function() {
         // Si no hay token, redirigir a login
         window.location.replace("login.html");
     }
+    
+    // Solicitar permiso para notificaciones al cargar la página
+    requestNotificationPermission().then(granted => {
+        if (granted) {
+            console.log('Permiso de notificaciones concedido');
+            // Configurar notificaciones push
+            setupPushNotifications();
+        }
+    });
+    
     // Verificar si el usuario está autenticado
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
+            
+            // Configurar escucha global de notificaciones
+            setupGlobalNotificationsListener();
             
             // Comprobar si hay un chatId en la URL
             const urlParams = new URLSearchParams(window.location.search);
@@ -60,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
+
 
 
 // Cargar los chats del usuario actual
@@ -1186,66 +1200,200 @@ async function createNewChat(otheruserEmail) {
     }
 }
 
+// Añade estas funciones al principio de tu archivo messages.js, después de las variables globales
+
 // Función para solicitar permiso para notificaciones
 function requestNotificationPermission() {
     if (!("Notification" in window)) {
         console.log("Este navegador no soporta notificaciones");
-        return false;
+        return Promise.resolve(false);
     }
     
     if (Notification.permission === "granted") {
-        return true;
+        return Promise.resolve(true);
     } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(function (permission) {
+        return Notification.requestPermission().then(function (permission) {
             return permission === "granted";
         });
     }
-    return Notification.permission === "granted";
+    return Promise.resolve(Notification.permission === "granted");
 }
 
-// Solicitar permiso cuando se carga la página
-document.addEventListener("DOMContentLoaded", function() {
-    requestNotificationPermission();
-});
+// Función para convertir la clave VAPID a formato adecuado
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
 
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Función para registrar el service worker y suscribirse a notificaciones push
+async function setupPushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.log('Notificaciones push no soportadas en este navegador');
+        return;
+    }
+    
+    try {
+        // Registrar el service worker
+        const registration = await navigator.serviceWorker.register('/service-worker.js');
+        console.log('Service Worker registrado:', registration);
+        
+        // Solicitar permiso para notificaciones
+        const permission = await requestNotificationPermission();
+        if (!permission) {
+            console.log('Permiso de notificaciones denegado');
+            return;
+        }
+        
+        // Usar la clave pública VAPID que ya tenemos
+        const vapidPublicKey = 'BK3dQwXI_qONBKYUHkooFbPXmQeewtjN0QhK1kBpVFBuM0wid5uD34Ttspm1Fo3RjO1GJTKHEV_LNFjGAbuHIRk';
+        
+        // Suscribirse a notificaciones push
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+        
+        console.log('Suscripción push obtenida:', subscription);
+        
+        // Enviar la suscripción al servidor
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('No hay token disponible para enviar la suscripción');
+            return;
+        }
+        
+        const response = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(subscription)
+        });
+        
+        if (response.ok) {
+            console.log('Suscripción enviada al servidor con éxito');
+        } else {
+            console.error('Error al enviar la suscripción al servidor');
+        }
+    } catch (error) {
+        console.error('Error al configurar notificaciones push:', error);
+    }
+}
 
 // Función para mostrar una notificación
 function showNotification(title, body, icon, clickCallback) {
-// Verificar si las notificaciones están permitidas
-if (Notification.permission !== "granted") {
-requestNotificationPermission();
-return;
-}
-
-// Crear y mostrar la notificación
-const notification = new Notification(title, {
-body: body,
-icon: icon || 'img/favicon.ico',
-badge: 'img/favicon.ico',
-vibrate: [200, 100, 200]
-});
-
-// Reproducir sonido de notificación
-playNotificationSound();
-
-// Manejar clic en la notificación
-if (clickCallback) {
-notification.onclick = clickCallback;
-}
-
-// Cerrar automáticamente después de 5 segundos
-setTimeout(() => {
-notification.close();
-}, 5000);
+    // Verificar si las notificaciones están permitidas
+    if (Notification.permission !== "granted") {
+        requestNotificationPermission();
+        return;
+    }
+    
+    // Crear y mostrar la notificación
+    const notification = new Notification(title, {
+        body: body,
+        icon: icon || 'img/favicon.ico',
+        badge: 'img/favicon.ico',
+        vibrate: [200, 100, 200]
+    });
+    
+    // Reproducir sonido de notificación
+    playNotificationSound();
+    
+    // Manejar clic en la notificación
+    if (clickCallback) {
+        notification.onclick = clickCallback;
+    }
+    
+    // Cerrar automáticamente después de 5 segundos
+    setTimeout(() => {
+        notification.close();
+    }, 5000);
 }
 
 // Función para reproducir sonido de notificación
 function playNotificationSound() {
-try {
-    const sound = new Audio('sounds/notification.mp3');
-    sound.volume = 0.5;
-    sound.play();
-} catch (error) {
-    console.error("Error al reproducir sonido de notificación:", error);
+    try {
+        const sound = new Audio('sounds/notification.mp3');
+        sound.volume = 0.5;
+        sound.play();
+    } catch (error) {
+        console.error("Error al reproducir sonido de notificación:", error);
+    }
 }
+
+// Función para configurar escucha global de notificaciones
+function setupGlobalNotificationsListener() {
+    if (!currentUser) return;
+    
+    console.log('Configurando escucha global de notificaciones para:', currentUser.email);
+    
+    // Escuchar cambios en todos los chats donde el usuario es participante
+    const chatsQuery = db.collection('chats')
+        .where('participantes', 'array-contains', currentUser.email);
+    
+    // Detener cualquier listener anterior
+    if (window.globalNotificationsUnsubscribe) {
+        window.globalNotificationsUnsubscribe();
+    }
+    
+    // Crear nuevo listener
+    window.globalNotificationsUnsubscribe = chatsQuery.onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'modified') {
+                const chatData = change.doc.data();
+                const chatId = change.doc.id;
+                
+                // Verificar si hay mensajes no leídos para el usuario actual
+                const unreadCount = chatData.unreadCount && chatData.unreadCount[currentUser.email] || 0;
+                
+                // Solo mostrar notificación si hay mensajes no leídos y no estamos en la página de ese chat
+                if (unreadCount > 0) {
+                    const currentChatIdFromUrl = new URLSearchParams(window.location.search).get('chatId');
+                    
+                    // No mostrar notificación si ya estamos en ese chat
+                    if (currentChatIdFromUrl === chatId) {
+                        return;
+                    }
+                    
+                    // Obtener el otro participante
+                    const otherUserEmail = chatData.participantes.find(email => email !== currentUser.email);
+                    
+                    // Obtener información del otro usuario
+                    db.collection('users').where('email', '==', otherUserEmail).get()
+                        .then(snapshot => {
+                            if (!snapshot.empty) {
+                                const userData = snapshot.docs[0].data();
+                                const userName = userData.nombre && userData.apellidos ? 
+                                    `${userData.nombre} ${userData.apellidos}` : otherUserEmail;
+                                const userPhoto = userData.foto || 'img/default.png';
+                                
+                                // Mostrar notificación
+                                showNotification(
+                                    `Nuevo mensaje de ${userName}`, 
+                                    chatData.lastMessage || 'Tienes un nuevo mensaje', 
+                                    userPhoto,
+                                    function() {
+                                        // Al hacer clic, ir a la página de mensajes con este chat
+                                        window.location.href = `messages.html?chatId=${chatId}&otherEmail=${otherUserEmail}`;
+                                    }
+                                );
+                            }
+                        });
+                }
+            }
+        });
+    }, error => {
+        console.error('Error en la escucha global de notificaciones:', error);
+    });
 }
