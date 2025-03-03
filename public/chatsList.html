@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Chats - Bookser</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/chatList.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body>
+    <nav class="sidebar">
+        <a href="index.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="buscador.html"><i class="fas fa-search"></i> Buscar</a>
+        <a href="chats_list.html" class="active"><i class="fas fa-envelope"></i> Mensajes</a>
+        <a href="perfil.html"><i class="fas fa-user"></i> Perfil</a>
+    </nav>
+    
+    <div class="container-wrapper">
+        <div class="chats-header">
+            <h1>Mis Conversaciones</h1>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Buscar en conversaciones...">
+                <button><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+        
+        <!-- Sección de chats activos -->
+        <div id="active-chats-section" class="chats-section">
+            <h2><i class="fas fa-comments"></i> Conversaciones recientes</h2>
+            <div id="chats-loading" class="loading-indicator">
+                <div class="spinner"></div>
+                <p>Cargando conversaciones...</p>
+            </div>
+            <div id="no-chats-message" class="empty-state" style="display: none;">
+                <i class="fas fa-comment-slash"></i>
+                <p>No tienes conversaciones activas</p>
+                <p class="sub-text">Inicia una nueva conversación con otros usuarios</p>
+            </div>
+            <ul id="chats-list" class="chats-list">
+                <!-- Los chats se cargarán dinámicamente aquí -->
+            </ul>
+        </div>
+        
+        <!-- Sección de sugerencias de usuarios -->
+        <div id="suggested-users-section" class="chats-section">
+            <h2><i class="fas fa-user-friends"></i> Sugerencias para chatear</h2>
+            <div id="suggestions-loading" class="loading-indicator">
+                <div class="spinner"></div>
+                <p>Cargando sugerencias...</p>
+            </div>
+            <div id="no-suggestions-message" class="empty-state" style="display: none;">
+                <i class="fas fa-users-slash"></i>
+                <p>No hay sugerencias disponibles</p>
+            </div>
+            <ul id="suggested-users-list" class="users-list">
+                <!-- Las sugerencias se cargarán dinámicamente aquí -->
+            </ul>
+        </div>
+    </div>
+
+    <script src="js/chatList.js"></script>
+</body>
+</html>
