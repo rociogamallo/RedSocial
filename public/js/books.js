@@ -30,6 +30,7 @@ form.addEventListener('submit', function (e) {
     .then(data => {
       if (data.success) {
         alert('Libro agregado exitosamente');
+        window.location.replace("perfil.html");
         form.reset();  // Limpiar el formulario
       } else {
         alert('Error al agregar el libro');
@@ -39,5 +40,6 @@ form.addEventListener('submit', function (e) {
       console.error('Error:', error);
       alert('Hubo un error al enviar el formulario');
     });
-});
 
+    
+});
