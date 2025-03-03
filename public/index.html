@@ -6,12 +6,16 @@
     <title>Bookser - Intercambio de Libros</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/index.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
     <nav class="sidebar">
         <a href="index.html"><i class="fas fa-home"></i> Inicio</a>
         <a href="buscador.html"><i class="fas fa-search"></i> Buscar</a>
-        <a href="chats.html"><i class="fas fa-envelope"></i> Mensajes</a>
+        <a href="chatsList.html"><i class="fas fa-envelope"></i> Mensajes</a>
         <a href="perfil.html"><i class="fas fa-user"></i> Perfil</a>
         <a href="logout.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
     </nav>
@@ -146,20 +150,201 @@
             });
 
     
-            // Script para manejar el clic en el botón de solicitud de intercambio
-            document.addEventListener("DOMContentLoaded", function () {
-                const requestButtons = document.querySelectorAll(".request-btn");
-    
-                requestButtons.forEach(button => {
-                    button.addEventListener("click", function (event) {
-                        event.preventDefault();
-                        const ownerEmail = button.getAttribute("data-owner-email"); // Obtener el email del propietario
-                        localStorage.setItem("bookOwnerEmail", ownerEmail); // Guardar el email del propietario
-                        window.location.href = "messages.html"; // Redirige al chat
-                    });
+           // Reemplaza el evento de click para los botones de solicitud en prueba index.html
+        document.addEventListener("click", function(event) {
+            if (event.target.classList.contains('request-btn')) {
+                event.preventDefault();
+                
+                const ownerEmail = event.target.getAttribute('data-owner-email');
+                const userEmail = localStorage.getItem("userEmail");
+                
+                if (!userEmail) {
+                    alert("Debes iniciar sesión para solicitar un libro");
+                    window.location.href = "login.html";
+                    return;
+                }
+                
+                // Iniciar chat con el propietario
+                startChatWithUser(userEmail, ownerEmail);
+            }
+        });
+
+        // Función para iniciar chat con otro usuario
+        async function startChatWithUser(currentUserEmail, otherUserEmail) {
+            try {
+                // Configuración de Firebase (asegúrate de que esto esté definido en tu página)
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBgf6uDmurevI9MSV-gGgR_EmNFWHILsWs",
+                    authDomain: "libros-9d5d4.firebaseapp.com",
+                    projectId: "libros-9d5d4",
+                    storageBucket: "libros-9d5d4.appspot.com",
+                    messagingSenderId: "802623661541",
+                    appId: "1:802623661541:web:5bce5122460c335c4ebb0c"
+                };
+
+                // Inicializar Firebase si no está inicializado
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                const db = firebase.firestore();
+                
+                // Comprobar si ya existe un chat entre estos usuarios
+                const existingChatsQuery = await db.collection('chats')
+                    .where('participantes', 'array-contains', currentUserEmail)
+                    .get();
+                
+                let existingChatId = null;
+                
+                existingChatsQuery.forEach(doc => {
+                    const chatData = doc.data();
+                    if (chatData.participantes.includes(otherUserEmail)) {
+                        existingChatId = doc.id;
+                    }
+                });
+                
+                // Si ya existe un chat, ir a ese chat
+                if (existingChatId) {
+                    window.location.href = `messages.html?chatId=${existingChatId}&otherEmail=${otherUserEmail}`;
+                    return;
+                }
+                
+                // Si no existe, crear nuevo chat
+                const newChatRef = await db.collection('chats').add({
+                    participantes: [currentUserEmail, otherUserEmail],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessage: "",
+                    unreadCount: {
+                        [currentUserEmail]: 0,
+                        [otherUserEmail]: 0
+                    }
+                });
+                
+                // Redirigir al chat recién creado
+                window.location.href = `messages.html?chatId=${newChatRef.id}&otherEmail=${otherUserEmail}`;
+                
+            } catch (error) {
+                console.error('Error al crear nuevo chat:', error);
+                alert('Error al crear el chat. Por favor, inténtalo de nuevo.');
+            }
+        }
+
+        });
+
+        // Configurar escucha global para notificaciones de chat
+        function setupGlobalNotifications() {
+            if (!currentUser) return;
+            
+            // Escuchar cambios en todos los chats donde el usuario es participante
+            const chatsQuery = db.collection('chats')
+                .where('participantes', 'array-contains', currentUser.email);
+            
+            const unsubscribe = chatsQuery.onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'modified') {
+                        const chatData = change.doc.data();
+                        const chatId = change.doc.id;
+                        
+                        // Verificar si hay mensajes no leídos para el usuario actual
+                        const unreadCount = chatData.unreadCount && chatData.unreadCount[currentUser.email] || 0;
+                        
+                        if (unreadCount > 0 && !window.location.href.includes('messages.html')) {
+                            // Obtener el otro participante
+                            const otherUserEmail = chatData.participantes.find(email => email !== currentUser.email);
+                            
+                            // Obtener información del otro usuario
+                            db.collection('users').where('email', '==', otherUserEmail).get()
+                                .then(snapshot => {
+                                    if (!snapshot.empty) {
+                                        const userData = snapshot.docs[0].data();
+                                        const userName = userData.nombre && userData.apellidos ? 
+                                            `${userData.nombre} ${userData.apellidos}` : otherUserEmail;
+                                        const userPhoto = userData.foto || 'img/default.png';
+                                        
+                                        // Mostrar notificación
+                                        showNotification(
+                                            `Nuevo mensaje de ${userName}`, 
+                                            chatData.lastMessage || 'Tienes un nuevo mensaje', 
+                                            userPhoto,
+                                            function() {
+                                                // Al hacer clic, ir a la página de mensajes con este chat
+                                                window.location.href = `messages.html?chatId=${chatId}&otherEmail=${otherUserEmail}`;
+                                            }
+                                        );
+                                    }
+                                });
+                        }
+                    }
                 });
             });
+            
+            // Guardar la función de cancelación
+            window.globalNotificationsUnsubscribe = unsubscribe;
+        }
+
+        // Llamar a esta función cuando el usuario inicie sesión
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                setupGlobalNotifications();
+                // Resto de tu código...
+            }
         });
+
+        // Registrar el Service Worker para notificaciones push
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(function(registration) {
+            console.log('Service Worker registrado con éxito:', registration);
+            
+            // Solicitar permiso para notificaciones
+            return requestNotificationPermission();
+            })
+            .then(function(permission) {
+            if (permission) {
+                // Obtener la suscripción push
+                return navigator.serviceWorker.ready.then(function(registration) {
+                return registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array('BK3dQwXI_qONBKYUHkooFbPXmQeewtjN0QhK1kBpVFBuM0wid5uD34Ttspm1Fo3RjO1GJTKHEV_LNFjGAbuHIRk')
+                });
+                });
+            }
+            })
+            .then(function(subscription) {
+            if (subscription) {
+                // Enviar la suscripción al servidor
+                return fetch('/api/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(subscription)
+                });
+            }
+            })
+            .catch(function(error) {
+            console.error('Error al registrar el Service Worker:', error);
+            });
+        }
+
+        // Función auxiliar para convertir la clave VAPID
+        function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+        }
     </script>
     
 </body>
