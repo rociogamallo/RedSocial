@@ -24,6 +24,12 @@ let messagesListener = null;
 let userStatusListener = null;
 
 document.addEventListener("DOMContentLoaded", function() {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        // Si no hay token, redirigir a login
+        window.location.replace("login.html");
+    }
     // Verificar si el usuario está autenticado
     auth.onAuthStateChanged(user => {
         if (user) {
@@ -169,9 +175,24 @@ async function loadUserChats() {
                         `;
                         
                         // Añadir evento click para ir al chat
-                        chatItem.addEventListener('click', () => {
-                            window.location.href = `messages.html?chatId=${chatData.id}&otherEmail=${otherUserEmail}`;
-                        });
+                        // Modificar el evento click para los elementos de chat
+                    chatItem.addEventListener('click', async () => {
+                        // Ocultar visualmente el badge antes de cambiar de página
+                        const unreadBadge = chatItem.querySelector('.unread-badge');
+                        if (unreadBadge) {
+                            unreadBadge.classList.add('hidden');
+                        }
+                        
+                        // Quitar la clase 'unread' del último mensaje
+                        const lastMessage = chatItem.querySelector('.chat-last-message');
+                        if (lastMessage) {
+                            lastMessage.classList.remove('unread');
+                        }
+                        
+                        // Navegar al chat
+                        window.location.href = `messages.html?chatId=${chatData.id}&otherEmail=${otherUserEmail}`;
+                    });
+
                         
                         chatsList.appendChild(chatItem);
                     } catch (userError) {
@@ -270,47 +291,46 @@ function formatMessageTime(timestamp) {
 }
 
 // Abrir un chat específico
-// Reemplaza la función openChat en messages.html
+// Modificar la función openChat para que también actualice visualmente el badge
 async function openChat(currentChatId, otherEmail) {
-        // Limpiar listeners anteriores
-        if (messagesListener) {
-            messagesListener();
-        }
-        if (userStatusListener) {
-            userStatusListener();
-        }
-        
-        // Actualizar variables globales
-        currentChatId = currentChatId;
-        currentOtherEmail = otherEmail;
-        
-        // Obtener el elemento chat-box y verificar si existe
-        const chatBox = document.getElementById('chat-box');
-        if (!chatBox) {
-            console.error('Elemento chat-box no encontrado');
-            return;
-        }
-        
-        // Actualizar UI para mostrar que se está cargando
-        chatBox.innerHTML = `
-            <div id="messages-loading" class="loading-indicator">
-                <div class="spinner"></div>
-                <p>Cargando mensajes...</p>
-            </div>
-        `;
-        
-        // Habilitar el input y botón de enviar si existen
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        
-        if (messageInput) {
-            messageInput.disabled = false;
-        }
-        
-        if (sendButton) {
-            sendButton.disabled = false;
-        }
-        
+    // Limpiar listeners anteriores
+    if (messagesListener) {
+        messagesListener();
+    }
+    if (userStatusListener) {
+        userStatusListener();
+    }
+    
+    // Actualizar variables globales
+    currentChatId = currentChatId;
+    currentOtherEmail = otherEmail;
+    
+    // Obtener el elemento chat-box y verificar si existe
+    const chatBox = document.getElementById('chat-box');
+    if (!chatBox) {
+        console.error('Elemento chat-box no encontrado');
+        return;
+    }
+    
+    // Actualizar UI para mostrar que se está cargando
+    chatBox.innerHTML = `
+        <div id="messages-loading" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Cargando mensajes...</p>
+        </div>
+    `;
+    
+    // Habilitar el input y botón de enviar si existen
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    
+    if (messageInput) {
+        messageInput.disabled = false;
+    }
+    
+    if (sendButton) {
+        sendButton.disabled = false;
+    }
     
     try {
         // Cargar información del otro usuario
@@ -347,7 +367,22 @@ async function openChat(currentChatId, otherEmail) {
             });
         
         // Marcar mensajes como leídos
-        markMessagesAsRead(currentChatId, currentUser.email);
+        await markMessagesAsRead(currentChatId, currentUser.email);
+        
+        // NUEVO: Eliminar visualmente el badge de no leídos para este chat
+        const chatItem = document.querySelector(`.chat-item[data-chat-id="${currentChatId}"]`);
+        if (chatItem) {
+            const unreadBadge = chatItem.querySelector('.unread-badge');
+            if (unreadBadge) {
+                unreadBadge.style.display = 'none';
+            }
+            
+            // También eliminar la clase 'unread' del último mensaje
+            const lastMessage = chatItem.querySelector('.chat-last-message');
+            if (lastMessage) {
+                lastMessage.classList.remove('unread');
+            }
+        }
         
         // Configurar listener para nuevos mensajes
         messagesListener = db.collection('chats').doc(currentChatId)
@@ -378,6 +413,7 @@ async function openChat(currentChatId, otherEmail) {
         `;
     }
 }
+
 
 
 // Función para cargar los mensajes del chat
@@ -753,6 +789,7 @@ async function sendMessage(text) {
 
 // Configurar el evento de envío de mensajes
 document.addEventListener('DOMContentLoaded', function() {
+
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     
@@ -977,13 +1014,13 @@ function setupSendButton() {
     });
 }
 
-// Marcar mensajes como leídos
-async function markMessagesAsRead(currentChatId, userEmail) {
+// Mejorar la función markMessagesAsRead para que actualice también la UI
+async function markMessagesAsRead(chatId, userEmail) {
     try {
         // Obtener mensajes no leídos enviados por el otro usuario
-        const unreadMessages = await db.collection('chats').doc(currentChatId)
+        const unreadMessages = await db.collection('chats').doc(chatId)
             .collection('messages')
-            .where('senderId', '==', currentOtheruserEmail)
+            .where('sender', '!=', userEmail)  // Corregido: usar sender en lugar de senderId
             .where('read', '==', false)
             .get();
         
@@ -1001,17 +1038,34 @@ async function markMessagesAsRead(currentChatId, userEmail) {
         });
         
         // Resetear contador de no leídos para el usuario actual
-        batch.update(db.collection('chats').doc(currentChatId), {
+        batch.update(db.collection('chats').doc(chatId), {
             [`unreadCount.${userEmail}`]: 0
         });
         
         // Ejecutar batch
         await batch.commit();
         
+        // NUEVO: Actualizar visualmente el elemento de chat en la lista
+        const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+        if (chatItem) {
+            // Ocultar el badge de no leídos
+            const unreadBadge = chatItem.querySelector('.unread-badge');
+            if (unreadBadge) {
+                unreadBadge.style.display = 'none';
+            }
+            
+            // Quitar la clase 'unread' del último mensaje
+            const lastMessage = chatItem.querySelector('.chat-last-message');
+            if (lastMessage) {
+                lastMessage.classList.remove('unread');
+            }
+        }
+        
     } catch (error) {
         console.error('Error al marcar mensajes como leídos:', error);
     }
 }
+
 
 // Actualizar estado del usuario en la interfaz
 function updateUserStatus(userData) {
