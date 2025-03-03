@@ -75,7 +75,122 @@
         </div>
 
     </div>
-    
+    <!-- COntenedor para notificaciones -->
+    <div id="notification-indicator" class="notification-indicator" style="display: none;">
+        <i class="fas fa-bell"></i>
+        <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
+        <div class="notification-tooltip">
+            <h4>Notificaciones</h4>
+            <p id="notification-status">Cargando estado de notificaciones...</p>
+            <button id="notification-toggle">Activar notificaciones</button>
+        </div>
+    </div>
+
+    <script>
+        // Código para manejar el indicador de notificaciones
+        document.addEventListener('DOMContentLoaded', function() {
+            const indicator = document.getElementById('notification-indicator');
+            const badge = document.getElementById('notification-badge');
+            const statusText = document.getElementById('notification-status');
+            const toggleButton = document.getElementById('notification-toggle');
+            
+            // Mostrar el indicador
+            indicator.style.display = 'flex';
+            
+            // Verificar si el navegador soporta notificaciones
+            const browserSupport = 'Notification' in window;
+            
+            if (!browserSupport) {
+                statusText.textContent = 'Tu navegador no soporta notificaciones.';
+                toggleButton.textContent = 'No disponible';
+                toggleButton.classList.add('disabled');
+                indicator.classList.add('disabled');
+                return;
+            }
+            
+            // Actualizar el estado según el permiso actual
+            function updateNotificationStatus() {
+                const permission = Notification.permission;
+                
+                if (permission === 'granted') {
+                    statusText.textContent = 'Las notificaciones están activadas.';
+                    toggleButton.textContent = 'Desactivar notificaciones';
+                    indicator.classList.remove('disabled');
+                } else if (permission === 'denied') {
+                    statusText.textContent = 'Las notificaciones están bloqueadas. Cambia la configuración de tu navegador.';
+                    toggleButton.textContent = 'No disponible';
+                    toggleButton.classList.add('disabled');
+                    indicator.classList.add('disabled');
+                } else {
+                    statusText.textContent = 'Las notificaciones no están activadas.';
+                    toggleButton.textContent = 'Activar notificaciones';
+                    indicator.classList.add('disabled');
+                }
+            }
+            
+            // Inicializar estado
+            updateNotificationStatus();
+            
+            // Manejar clic en el botón
+            toggleButton.addEventListener('click', function() {
+                if (Notification.permission === 'granted') {
+                    // No podemos revocar el permiso desde JavaScript,
+                    // pero podemos desactivar nuestra suscripción
+                    // Aquí iría el código para desuscribirse
+                    alert('Para desactivar las notificaciones, cambia la configuración en tu navegador.');
+                } else if (Notification.permission !== 'denied') {
+                    // Solicitar permiso
+                    requestNotificationPermission().then(function(granted) {
+                        updateNotificationStatus();
+                        if (granted) {
+                            setupPushNotifications();
+                        }
+                    });
+                }
+            });
+            
+            // Actualizar el badge con el total de mensajes no leídos
+            function updateUnreadBadge() {
+                if (!currentUser) return;
+                
+                db.collection('chats')
+                    .where('participantes', 'array-contains', currentUser.email)
+                    .get()
+                    .then(snapshot => {
+                        let totalUnread = 0;
+                        
+                        snapshot.forEach(doc => {
+                            const chatData = doc.data();
+                            if (chatData.unreadCount && chatData.unreadCount[currentUser.email]) {
+                                totalUnread += chatData.unreadCount[currentUser.email];
+                            }
+                        });
+                        
+                        if (totalUnread > 0) {
+                            badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al contar mensajes no leídos:', error);
+                    });
+            }
+            
+            // Actualizar el badge cada 30 segundos
+            updateUnreadBadge();
+            setInterval(updateUnreadBadge, 30000);
+            
+            // También actualizar cuando cambie la autenticación
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    updateUnreadBadge();
+                }
+            });
+        });
+    </script>
+
     <script src="js/messages.js"></script>
 </body>
 </html>
