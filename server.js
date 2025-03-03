@@ -567,29 +567,142 @@ app.post('/api/subscribe', authenticateToken, async (req, res) => {
   }
 });
 
-// Función para enviar notificación push
+// Actualiza la función sendPushNotification para que maneje mejor los errores
 async function sendPushNotification(userEmail, title, body, icon, url) {
   try {
-    // Obtener la suscripción del usuario
-    const userSnapshot = await db.collection('users')
-      .where('email', '==', userEmail)
-      .get();
-    
-    if (userSnapshot.empty || !userSnapshot.docs[0].data().pushSubscription) {
-      return;
-    }
-    
-    const subscription = userSnapshot.docs[0].data().pushSubscription;
-    
-    // Enviar notificación
-    await webpush.sendNotification(subscription, JSON.stringify({
-      title,
-      body,
-      icon,
-      url
-    }));
-    
+      // Obtener la suscripción del usuario
+      const userSnapshot = await db.collection('users')
+          .where('email', '==', userEmail)
+          .get();
+      
+      if (userSnapshot.empty) {
+          console.log(`No se encontró el usuario ${userEmail} para enviar notificación`);
+          return;
+      }
+      
+      const userData = userSnapshot.docs[0].data();
+      if (!userData.pushSubscription) {
+          console.log(`El usuario ${userEmail} no tiene suscripción push`);
+          return;
+      }
+      
+      const subscription = userData.pushSubscription;
+      
+      // Enviar notificación
+      console.log(`Enviando notificación push a ${userEmail}: ${title}`);
+      
+      await webpush.sendNotification(subscription, JSON.stringify({
+          title,
+          body,
+          icon,
+          url
+      }));
+      
+      console.log(`Notificación enviada con éxito a ${userEmail}`);
   } catch (error) {
-    console.error('Error al enviar notificación push:', error);
+      console.error(`Error al enviar notificación push a ${userEmail}:`, error);
+      
+      // Si el error es de suscripción expirada, eliminarla
+      if (error.statusCode === 410) {
+          console.log(`Suscripción expirada para ${userEmail}, eliminando...`);
+          try {
+              await db.collection('users')
+                  .where('email', '==', userEmail)
+                  .get()
+                  .then(snapshot => {
+                      if (!snapshot.empty) {
+                          snapshot.docs[0].ref.update({
+                              pushSubscription: admin.firestore.FieldValue.delete()
+                          });
+                      }
+                  });
+          } catch (deleteError) {
+              console.error('Error al eliminar suscripción expirada:', deleteError);
+          }
+      }
   }
 }
+
+// Añade un endpoint para obtener la clave pública VAPID
+app.get('/api/vapidPublicKey', (req, res) => {
+  res.json({ publicKey: vapidKeys.publicKey });
+});
+
+// Añade un trigger para Firestore que envíe notificaciones cuando se creen nuevos mensajes
+// Esto debe implementarse como una Cloud Function, pero aquí te muestro cómo sería:
+db.collection('chats').onSnapshot(snapshot => {
+  snapshot.docChanges().forEach(async change => {
+      if (change.type === 'modified') {
+          const chatData = change.doc.data();
+          const chatId = change.doc.id;
+          
+          // Verificar si hay un contador de no leídos
+          if (chatData.unreadCount) {
+              // Para cada usuario con mensajes no leídos
+              for (const [userEmail, count] of Object.entries(chatData.unreadCount)) {
+                  // Si hay mensajes no leídos
+                  if (count > 0) {
+                      try {
+                          // Obtener información del otro usuario (el remitente)
+                          const otherUserEmail = chatData.participantes.find(email => email !== userEmail);
+                          
+                          if (otherUserEmail) {
+                              const userSnapshot = await db.collection('users')
+                                  .where('email', '==', otherUserEmail)
+                                  .get();
+                              
+                              if (!userSnapshot.empty) {
+                                  const userData = userSnapshot.docs[0].data();
+                                  const userName = userData.nombre && userData.apellidos ? 
+                                      `${userData.nombre} ${userData.apellidos}` : otherUserEmail;
+                                  const userPhoto = userData.foto || '/img/default.png';
+                                  
+                                  // Enviar notificación push
+                                  await sendPushNotification(
+                                      userEmail,
+                                      `Nuevo mensaje de ${userName}`,
+                                      chatData.lastMessage || 'Tienes un nuevo mensaje',
+                                      userPhoto,
+                                      `/messages.html?chatId=${chatId}&otherEmail=${otherUserEmail}`
+                                  );
+                              }
+                          }
+                      } catch (error) {
+                          console.error('Error al enviar notificación:', error);
+                      }
+                  }
+              }
+          }
+      }
+  });
+});
+
+// Añade este endpoint a server.js
+app.get('/api/notifications/status', authenticateToken, async (req, res) => {
+  try {
+      const userEmail = req.user.email;
+      
+      // Obtener el usuario
+      const userSnapshot = await db.collection('users')
+          .where('email', '==', userEmail)
+          .get();
+      
+      if (userSnapshot.empty) {
+          return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      
+      const userData = userSnapshot.docs[0].data();
+      
+      // Verificar si tiene suscripción push
+      const hasPushSubscription = !!userData.pushSubscription;
+      
+      res.json({
+          notificationsEnabled: hasPushSubscription,
+          browserSupport: true
+      });
+      
+  } catch (error) {
+      console.error('Error al verificar estado de notificaciones:', error);
+      res.status(500).json({ error: 'Error al verificar estado de notificaciones' });
+  }
+});
