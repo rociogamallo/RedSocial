@@ -155,11 +155,8 @@ body {
     font-weight: 500;
 }
 
+/* Estilos para el badge de mensajes no leídos */
 .unread-badge {
-    position: absolute;
-    top: 50%;
-    right: 15px;
-    transform: translateY(-50%);
     background-color: #3498db;
     color: white;
     border-radius: 50%;
@@ -168,10 +165,24 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75em;
+    font-size: 12px;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.unread-badge.hidden {
+    opacity: 0;
+    transform: translateY(-50%) scale(0);
+}
+
+/* Estilo para mensajes no leídos */
+.chat-last-message.unread {
     font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    padding: 0 5px;
+    color: #2c3e50;
+    transition: font-weight 0.3s ease, color 0.3s ease;
 }
 
 /* Contenedor del chat */
